@@ -4,22 +4,20 @@ import { StatusBar } from 'expo-status-bar';
 import Checkbox from 'expo-checkbox';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import TaskList from './src/components/TaskList';
-import { addTask, deleteTask, getAllTasks, updateTask, TaskItem } from './src/utils/handle-api';
 import { globalStyles } from './src/styles/global';
 import AboutScreen from './src/components/AboutScreen';
 
 // TODO (Zustand): Importe o seu useTaskStore aqui
+import useTaskStore from './src/store/useTaskStore';
 
 export default function App() {
   // TODO (Zustand): Remova este useState e utilize o seletor da sua store para pegar as tasks
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const { tasks, loading, fetchTasks, addTask, updateTask, deleteTask, deleteAllTasks, editingTask, setEditingTask,   filter, setFilter } = useTaskStore();
+
   const [text, setText] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [taskId, setTaskId] = useState("");
-  const [loading, setLoading] = useState(true);
   const [logoError, setLogoError] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'completed' | 'pending'>('all');
-
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -29,8 +27,19 @@ export default function App() {
 
   useEffect(() => {
     // TODO (Zustand): Atualize esta chamada para usar a action correspondente da store
-    getAllTasks(setTasks, setLoading);
+    fetchTasks();
   }, []);
+
+  useEffect(() => {
+    if (editingTask) {
+      setIsUpdating(true);
+      setTaskId(editingTask._id);
+      setText(editingTask.text);
+      setCompleted(!!editingTask.completed);
+      setDueDate(editingTask.dueDate ? new Date(editingTask.dueDate) : null);
+      setModalVisible(true);
+    }
+  }, [editingTask]);
 
   const resetForm = () => {
     setText("");
@@ -40,25 +49,17 @@ export default function App() {
     setIsUpdating(false);
     setTaskId("");
     setModalVisible(false);
-  };
-
-  const updateMode = (task: TaskItem) => {
-    setIsUpdating(true);
-    setTaskId(task._id);
-    setText(task.text);
-    setCompleted(!!task.completed);
-    setDueDate(task.dueDate ? new Date(task.dueDate) : null);
-    setModalVisible(true);
+    setEditingTask(null);
   };
 
   const handleSave = () => {
     const formattedDate = dueDate ? dueDate.toISOString() : null;
     if (isUpdating) {
       // TODO (Zustand): Substitua a chamada abaixo pela action de atualizar da sua store
-      updateTask(taskId, text, completed, formattedDate, setTasks, resetForm);
+      updateTask(taskId, text, completed, formattedDate, resetForm);
     } else {
       // TODO (Zustand): Substitua a chamada abaixo pela action de adicionar da sua store
-      addTask(text, completed, formattedDate, setTasks, resetForm);
+      addTask(text, completed, formattedDate, resetForm);
     }
   };
 
@@ -74,9 +75,9 @@ export default function App() {
           {logoError ? (
             <Text style={styles.header}>Gerenciador de Tarefas</Text>
           ) : (
-            <Image 
-              source={require('./assets/task-app-banner.png')} 
-              style={styles.logo} 
+            <Image
+              source={require('./assets/task-app-banner.png')}
+              style={styles.logo}
               onError={() => setLogoError(true)}
             />
           )}
@@ -88,20 +89,20 @@ export default function App() {
         </View>
 
         <View style={styles.filterContainer}>
-          <TouchableOpacity 
-            style={[styles.filterButton, filter === 'all' ? styles.filterButtonActive : styles.filterButtonInactive]} 
+          <TouchableOpacity
+            style={[styles.filterButton, filter === 'all' ? styles.filterButtonActive : styles.filterButtonInactive]}
             onPress={() => setFilter('all')}
           >
             <Text style={filter === 'all' ? styles.filterTextActive : styles.filterTextInactive}>Todas</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filter === 'completed' ? styles.filterButtonActive : styles.filterButtonInactive]} 
+          <TouchableOpacity
+            style={[styles.filterButton, filter === 'completed' ? styles.filterButtonActive : styles.filterButtonInactive]}
             onPress={() => setFilter('completed')}
           >
             <Text style={filter === 'completed' ? styles.filterTextActive : styles.filterTextInactive}>Concluídas</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filter === 'pending' ? styles.filterButtonActive : styles.filterButtonInactive]} 
+          <TouchableOpacity
+            style={[styles.filterButton, filter === 'pending' ? styles.filterButtonActive : styles.filterButtonInactive]}
             onPress={() => setFilter('pending')}
           >
             <Text style={filter === 'pending' ? styles.filterTextActive : styles.filterTextInactive}>Pendentes</Text>
@@ -109,7 +110,7 @@ export default function App() {
         </View>
 
         <View style={styles.actionButtonsContainer}>
-          <Pressable 
+          <Pressable
             style={({ pressed }) => [
               styles.actionButton,
               styles.actionButtonAdd,
@@ -120,14 +121,14 @@ export default function App() {
             <Text style={styles.actionButtonText}>Nova Tarefa</Text>
           </Pressable>
 
-          <Pressable 
+          <Pressable
             style={({ pressed }) => [
               styles.actionButton,
               styles.deleteButton,
               pressed && styles.deleteButtonPressed
             ]}
             // TODO (Zustand): Chame a action de deletar todas as tarefas da sua store
-            onPress={() => setTasks([])} 
+            onPress={() => deleteAllTasks()}
           >
             <Text style={styles.actionButtonText}>Excluir todas</Text>
           </Pressable>
@@ -138,15 +139,7 @@ export default function App() {
         </View>
 
         {/* TODO (Zustand): Remova as props tasks, onUpdate e onDelete após refatorar o TaskList */}
-        <TaskList 
-          tasks={tasks.filter(t => {
-            if (filter === 'completed') return t.completed;
-            if (filter === 'pending') return !t.completed;
-            return true;
-          })} 
-          onUpdate={updateMode} 
-          onDelete={(id) => deleteTask(id, setTasks)} 
-        />
+        <TaskList />
 
         {loading && (
           <View style={styles.loaderContainer}>
@@ -164,7 +157,7 @@ export default function App() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{isUpdating ? "Editar Tarefa" : "Nova Tarefa"}</Text>
-            
+
             <TextInput
               style={styles.modalInput}
               placeholder="Nome da tarefa..."
@@ -177,7 +170,7 @@ export default function App() {
               <Text style={styles.fieldLabel}>Data limite:</Text>
               {Platform.OS === 'web' ? (
                 // @ts-ignore
-                <input 
+                <input
                   type="date"
                   value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
                   onChange={(e: any) => {
@@ -223,11 +216,11 @@ export default function App() {
               <Text style={styles.fieldLabel}>Prioridade:</Text>
               <View style={styles.priorityContainer}>
                 {['Baixa', 'Média', 'Alta'].map((p) => (
-                  <TouchableOpacity 
-                    key={p} 
+                  <TouchableOpacity
+                    key={p}
                     style={[
-                      styles.priorityButton, 
-                      priority === p && { 
+                      styles.priorityButton,
+                      priority === p && {
                         backgroundColor: p === 'Baixa' ? '#4caf50' : p === 'Média' ? '#ff9800' : '#f44336',
                         borderColor: p === 'Baixa' ? '#4caf50' : p === 'Média' ? '#ff9800' : '#f44336'
                       }
@@ -244,8 +237,8 @@ export default function App() {
               <TouchableOpacity style={styles.modalCancelBtn} onPress={resetForm}>
                 <Text style={styles.modalCancelText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalSaveBtn, !text.trim() && styles.modalSaveBtnDisabled]} 
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, !text.trim() && styles.modalSaveBtnDisabled]}
                 onPress={handleSave}
                 disabled={!text.trim()}
               >

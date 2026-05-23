@@ -39,4 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local env files
 .env
+.env*
+
+# backend
+tasks-express-backend/
