@@ -1,12 +1,21 @@
-import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { globalStyles } from '../../src/styles/global';
 import useTaskStore from '../../src/store/useTaskStore';
+import useAuthStore from '../../src/store/useAuthStore';
 
 export default function SettingsScreen() {
     const { tasks, deleteAllTasks } = useTaskStore();
+    const { email, logout } = useAuthStore();
+    const router = useRouter();
     const completedCount = tasks.filter(t => t.completed).length;
     const pendingCount = tasks.filter(t => !t.completed).length;
+
+    const handleLogout = () => {
+        logout();
+        router.replace('/login');
+    };
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -31,6 +40,14 @@ export default function SettingsScreen() {
                 <Text style={styles.aboutText}>Gerenciador de Tarefas</Text>
                 <Text style={styles.aboutSubText}>Expo + Zustand + Expo Router</Text>
                 <Text style={styles.versionText}>v1.0.0</Text>
+            </View>
+
+            <Text style={styles.sectionTitle}>Conta</Text>
+            <View style={styles.card}>
+                {!!email && <Text style={styles.emailText}>{email}</Text>}
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <Text style={styles.logoutButtonText}>Sair</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     );
@@ -94,5 +111,21 @@ const styles = StyleSheet.create({
     versionText: {
         fontSize: 12,
         color: '#aaa',
+    },
+    emailText: {
+        fontSize: 14,
+        color: '#555',
+        marginBottom: 12,
+    },
+    logoutButton: {
+        backgroundColor: '#000',
+        borderRadius: 8,
+        padding: 12,
+        alignItems: 'center',
+    },
+    logoutButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
