@@ -1,29 +1,32 @@
 import React, { useMemo } from 'react';
 import { SectionList, StyleSheet, View, Text } from 'react-native';
 import TaskItem from './TaskItem';
+import EmptyState from './EmptyState';
 import useTaskStore from '../store/useTaskStore';
 
-// TODO (Zustand): Remova as props tasks, onUpdate e onDelete daqui, elas não serão mais necessárias
-// TODO (Zustand): Importe o useTaskStore e pegue as tasks diretamente da store
 const TaskList: React.FC = () => {
-  const tasks = useTaskStore(state => state.tasks);
-  const filter = useTaskStore(state => state.filter);
+  const tasks = useTaskStore((state) => state.tasks);
+  const filter = useTaskStore((state) => state.filter);
 
   const filteredTasks = useMemo(() => {
-    if (filter === 'completed') return tasks.filter(t => t.completed);
-    if (filter === 'pending') return tasks.filter(t => !t.completed);
+    if (filter === 'completed') return tasks.filter((t) => t.completed);
+    if (filter === 'pending') return tasks.filter((t) => !t.completed);
     return tasks;
   }, [tasks, filter]);
 
   const sections = useMemo(() => {
     const completedTasks = filteredTasks.filter((task) => task.completed);
     const pendingTasks = filteredTasks.filter((task) => !task.completed);
-
     return [
       { title: '✅ Concluídas', data: completedTasks },
       { title: '📋 Pendentes', data: pendingTasks },
     ];
   }, [filteredTasks]);
+
+  // Exercício 5: exibe EmptyState quando não há tarefas na lista filtrada
+  if (filteredTasks.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
     <View style={styles.listContainer}>
@@ -34,9 +37,7 @@ const TaskList: React.FC = () => {
         renderSectionHeader={({ section: { title } }) => (
           <Text style={styles.sectionHeader}>{title}</Text>
         )}
-        renderItem={({ item }) => (
-          <TaskItem task={item} />
-        )}
+        renderItem={({ item }) => <TaskItem task={item} />}
         renderSectionFooter={({ section }) =>
           section.data.length === 0 ? (
             <Text style={styles.emptySectionText}>Nenhuma tarefa nesta categoria.</Text>
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
     textAlign: 'center',
-  }
+  },
 });
 
 export default TaskList;

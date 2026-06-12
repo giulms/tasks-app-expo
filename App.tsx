@@ -1,22 +1,53 @@
+import './global.css';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, Platform, StatusBar as RNStatusBar, Image, Pressable, ActivityIndicator, Modal, Button } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+  StatusBar as RNStatusBar,
+  Image,
+  Pressable,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Checkbox from 'expo-checkbox';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import TaskList from './src/components/TaskList';
 import { globalStyles } from './src/styles/global';
 import AboutScreen from './src/components/AboutScreen';
-
-// TODO (Zustand): Importe o seu useTaskStore aqui
 import useTaskStore from './src/store/useTaskStore';
 
-export default function App() {
-  // TODO (Zustand): Remova este useState e utilize o seletor da sua store para pegar as tasks
-  const { tasks, loading, fetchTasks, addTask, updateTask, deleteTask, deleteAllTasks, editingTask, setEditingTask,   filter, setFilter } = useTaskStore();
+// Exercício 3: Gluestack-UI
+import {
+  GluestackUIProvider,
+  Input,
+  InputField,
+  Button as GButton,
+  ButtonText,
+} from '@gluestack-ui/themed';
+import { config } from '@gluestack-ui/config';
 
-  const [text, setText] = useState("");
+export default function App() {
+  const {
+    tasks,
+    loading,
+    fetchTasks,
+    addTask,
+    updateTask,
+    deleteAllTasks,
+    editingTask,
+    setEditingTask,
+    filter,
+    setFilter,
+  } = useTaskStore();
+
+  const [text, setText] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [taskId, setTaskId] = useState("");
+  const [taskId, setTaskId] = useState('');
   const [logoError, setLogoError] = useState(false);
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -26,7 +57,6 @@ export default function App() {
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta'>('Baixa');
 
   useEffect(() => {
-    // TODO (Zustand): Atualize esta chamada para usar a action correspondente da store
     fetchTasks();
   }, []);
 
@@ -42,12 +72,12 @@ export default function App() {
   }, [editingTask]);
 
   const resetForm = () => {
-    setText("");
+    setText('');
     setCompleted(false);
     setDueDate(null);
     setPriority('Baixa');
     setIsUpdating(false);
-    setTaskId("");
+    setTaskId('');
     setModalVisible(false);
     setEditingTask(null);
   };
@@ -55,10 +85,8 @@ export default function App() {
   const handleSave = () => {
     const formattedDate = dueDate ? dueDate.toISOString() : null;
     if (isUpdating) {
-      // TODO (Zustand): Substitua a chamada abaixo pela action de atualizar da sua store
       updateTask(taskId, text, completed, formattedDate, resetForm);
     } else {
-      // TODO (Zustand): Substitua a chamada abaixo pela action de adicionar da sua store
       addTask(text, completed, formattedDate, resetForm);
     }
   };
@@ -69,212 +97,213 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          {logoError ? (
-            <Text style={styles.header}>Gerenciador de Tarefas</Text>
-          ) : (
-            <Image
-              source={require('./assets/task-app-banner.png')}
-              style={styles.logo}
-              onError={() => setLogoError(true)}
-            />
-          )}
-          {!logoError && <Text style={styles.header}>Tarefas</Text>}
-        </View>
-
-        <View style={styles.counterContainer}>
-          <Text style={styles.counterText}>Total de Tarefas: {tasks.length}</Text>
-        </View>
-
-        <View style={styles.filterContainer}>
-          <TouchableOpacity
-            style={[styles.filterButton, filter === 'all' ? styles.filterButtonActive : styles.filterButtonInactive]}
-            onPress={() => setFilter('all')}
-          >
-            <Text style={filter === 'all' ? styles.filterTextActive : styles.filterTextInactive}>Todas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterButton, filter === 'completed' ? styles.filterButtonActive : styles.filterButtonInactive]}
-            onPress={() => setFilter('completed')}
-          >
-            <Text style={filter === 'completed' ? styles.filterTextActive : styles.filterTextInactive}>Concluídas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterButton, filter === 'pending' ? styles.filterButtonActive : styles.filterButtonInactive]}
-            onPress={() => setFilter('pending')}
-          >
-            <Text style={filter === 'pending' ? styles.filterTextActive : styles.filterTextInactive}>Pendentes</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.actionButtonsContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              styles.actionButtonAdd,
-              pressed && styles.actionButtonAddPressed
-            ]}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={styles.actionButtonText}>Nova Tarefa</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              styles.deleteButton,
-              pressed && styles.deleteButtonPressed
-            ]}
-            // TODO (Zustand): Chame a action de deletar todas as tarefas da sua store
-            onPress={() => deleteAllTasks()}
-          >
-            <Text style={styles.actionButtonText}>Excluir todas</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.aboutButtonContainer}>
-          <Button title="Sobre o App" onPress={() => setAboutModalVisible(true)} />
-        </View>
-
-        {/* TODO (Zustand): Remova as props tasks, onUpdate e onDelete após refatorar o TaskList */}
-        <TaskList />
-
-        {loading && (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#000" />
-          </View>
-        )}
-      </View>
-
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={resetForm}
+    // Exercício 3: GluestackUIProvider envolve todo o app
+    <GluestackUIProvider config={config}>
+      {/*
+       * Exercício 1: SafeAreaView usa className do NativeWind.
+       * O paddingTop para Android é mantido via style pois depende de valor dinâmico.
+       */}
+      <SafeAreaView
+        className="flex-1 bg-gray-100"
+        style={Platform.OS === 'android' ? { paddingTop: RNStatusBar.currentHeight } : undefined}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{isUpdating ? "Editar Tarefa" : "Nova Tarefa"}</Text>
+        {/* Exercício 1: container principal migrado para NativeWind className */}
+        <View className="flex-1 max-w-[600px] w-full self-center px-4">
+          <View style={styles.headerContainer}>
+            {logoError ? (
+              <Text style={styles.header}>Gerenciador de Tarefas</Text>
+            ) : (
+              <Image
+                source={require('./assets/task-app-banner.png')}
+                style={styles.logo}
+                onError={() => setLogoError(true)}
+              />
+            )}
+            {!logoError && <Text style={styles.header}>Tarefas</Text>}
+          </View>
 
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Nome da tarefa..."
-              value={text}
-              maxLength={50}
-              onChangeText={setText}
-            />
+          <View style={styles.counterContainer}>
+            <Text style={styles.counterText}>Total de Tarefas: {tasks.length}</Text>
+          </View>
 
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Data limite:</Text>
-              {Platform.OS === 'web' ? (
-                // @ts-ignore
-                <input
-                  type="date"
-                  value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
-                  onChange={(e: any) => {
-                    const val = e.target.value;
-                    if (val) {
-                      const parts = val.split('-');
-                      setDueDate(new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
-                    } else {
-                      setDueDate(null);
-                    }
-                  }}
-                  style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc', flex: 1, marginLeft: 16 }}
-                />
-              ) : (
-                <View style={{ flex: 1, marginLeft: 16, alignItems: 'flex-start' }}>
-                  <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerBtn}>
-                    <Text>{dueDate ? dueDate.toLocaleDateString() : "Selecionar Data"}</Text>
-                  </TouchableOpacity>
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={dueDate || new Date()}
-                      mode="date"
-                      display="default"
-                      onChange={onChangeDate}
-                    />
-                  )}
-                </View>
-              )}
-            </View>
-
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Concluída:</Text>
-              <View style={styles.checkboxContainer}>
-                <Checkbox
-                  value={completed}
-                  onValueChange={setCompleted}
-                  color={completed ? '#000' : undefined}
-                />
-              </View>
-            </View>
-
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Prioridade:</Text>
-              <View style={styles.priorityContainer}>
-                {['Baixa', 'Média', 'Alta'].map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[
-                      styles.priorityButton,
-                      priority === p && {
-                        backgroundColor: p === 'Baixa' ? '#4caf50' : p === 'Média' ? '#ff9800' : '#f44336',
-                        borderColor: p === 'Baixa' ? '#4caf50' : p === 'Média' ? '#ff9800' : '#f44336'
-                      }
-                    ]}
-                    onPress={() => setPriority(p as any)}
-                  >
-                    <Text style={[styles.priorityText, priority === p && styles.priorityTextActive]}>{p}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancelBtn} onPress={resetForm}>
-                <Text style={styles.modalCancelText}>Cancelar</Text>
-              </TouchableOpacity>
+          <View style={styles.filterContainer}>
+            {(['all', 'completed', 'pending'] as const).map((f) => (
               <TouchableOpacity
-                style={[styles.modalSaveBtn, !text.trim() && styles.modalSaveBtnDisabled]}
-                onPress={handleSave}
-                disabled={!text.trim()}
+                key={f}
+                style={[styles.filterButton, filter === f ? styles.filterButtonActive : styles.filterButtonInactive]}
+                onPress={() => setFilter(f)}
               >
-                <Text style={styles.modalSaveText}>Salvar</Text>
+                <Text style={filter === f ? styles.filterTextActive : styles.filterTextInactive}>
+                  {f === 'all' ? 'Todas' : f === 'completed' ? 'Concluídas' : 'Pendentes'}
+                </Text>
               </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Exercício 3: "Nova Tarefa" substituído pelo Button do Gluestack-UI */}
+          <View style={styles.actionButtonsContainer}>
+            <GButton onPress={() => setModalVisible(true)} style={{ flex: 1 }}>
+              <ButtonText>Nova Tarefa</ButtonText>
+            </GButton>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionButton,
+                styles.deleteButton,
+                pressed && styles.deleteButtonPressed,
+              ]}
+              onPress={() => deleteAllTasks()}
+            >
+              <Text style={styles.actionButtonText}>Excluir todas</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.aboutButtonContainer}>
+            <GButton variant="link" onPress={() => setAboutModalVisible(true)}>
+              <ButtonText>Sobre o App</ButtonText>
+            </GButton>
+          </View>
+
+          <TaskList />
+
+          {loading && (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#000" />
+            </View>
+          )}
+        </View>
+
+        {/* Modal de criação/edição de tarefa */}
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={resetForm}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                {isUpdating ? 'Editar Tarefa' : 'Nova Tarefa'}
+              </Text>
+
+              {/* Exercício 3: TextInput nativo substituído pelo Input do Gluestack-UI */}
+              <Input variant="outline" size="md" style={styles.gluestackInput}>
+                <InputField
+                  placeholder="Nome da tarefa..."
+                  value={text}
+                  maxLength={50}
+                  onChangeText={setText}
+                />
+              </Input>
+
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Data limite:</Text>
+                {Platform.OS === 'web' ? (
+                  // @ts-ignore
+                  <input
+                    type="date"
+                    value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
+                    onChange={(e: any) => {
+                      const val = e.target.value;
+                      if (val) {
+                        const parts = val.split('-');
+                        setDueDate(
+                          new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+                        );
+                      } else {
+                        setDueDate(null);
+                      }
+                    }}
+                    style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc', flex: 1, marginLeft: 16 }}
+                  />
+                ) : (
+                  <View style={{ flex: 1, marginLeft: 16, alignItems: 'flex-start' }}>
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(true)}
+                      style={styles.datePickerBtn}
+                    >
+                      <Text>{dueDate ? dueDate.toLocaleDateString() : 'Selecionar Data'}</Text>
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={dueDate || new Date()}
+                        mode="date"
+                        display="default"
+                        onChange={onChangeDate}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Concluída:</Text>
+                <View style={styles.checkboxContainer}>
+                  <Checkbox
+                    value={completed}
+                    onValueChange={setCompleted}
+                    color={completed ? '#000' : undefined}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Prioridade:</Text>
+                <View style={styles.priorityContainer}>
+                  {(['Baixa', 'Média', 'Alta'] as const).map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      style={[
+                        styles.priorityButton,
+                        priority === p && {
+                          backgroundColor:
+                            p === 'Baixa' ? '#4caf50' : p === 'Média' ? '#ff9800' : '#f44336',
+                          borderColor:
+                            p === 'Baixa' ? '#4caf50' : p === 'Média' ? '#ff9800' : '#f44336',
+                        },
+                      ]}
+                      onPress={() => setPriority(p)}
+                    >
+                      <Text style={[styles.priorityText, priority === p && styles.priorityTextActive]}>
+                        {p}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={resetForm}>
+                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalSaveBtn, !text.trim() && styles.modalSaveBtnDisabled]}
+                  onPress={handleSave}
+                  disabled={!text.trim()}
+                >
+                  <Text style={styles.modalSaveText}>Salvar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <Modal
-        visible={aboutModalVisible}
-        animationType="slide"
-        onRequestClose={() => setAboutModalVisible(false)}
-      >
-        <AboutScreen onClose={() => setAboutModalVisible(false)} />
-      </Modal>
+        <Modal
+          visible={aboutModalVisible}
+          animationType="slide"
+          onRequestClose={() => setAboutModalVisible(false)}
+        >
+          <AboutScreen onClose={() => setAboutModalVisible(false)} />
+        </Modal>
 
-      <StatusBar style="auto" />
-    </SafeAreaView>
+        <StatusBar style="auto" />
+      </SafeAreaView>
+    </GluestackUIProvider>
   );
 }
 
+// Exercício 1: styles.safeArea e styles.container removidos — agora usam className do NativeWind
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: globalStyles.backgroundColor,
-    paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
-  },
-  container: {
-    flex: 1,
-    maxWidth: 600,
-    width: '100%',
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-  },
   headerContainer: {
     alignItems: 'center',
     marginTop: 16,
@@ -335,7 +364,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   aboutButtonContainer: {
-    marginTop: 16,
+    marginTop: 4,
     alignItems: 'center',
   },
   actionButton: {
@@ -355,16 +384,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
     letterSpacing: 0.5,
-  },
-  actionButtonAdd: {
-    backgroundColor: globalStyles.primaryColor,
-    shadowColor: globalStyles.primaryColor,
-  },
-  actionButtonAddPressed: {
-    backgroundColor: '#333',
-    transform: [{ scale: 0.98 }],
-    elevation: 1,
-    shadowOpacity: 0.1,
   },
   deleteButton: {
     backgroundColor: '#ff4d4d',
@@ -411,13 +430,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
+  gluestackInput: {
     marginBottom: 16,
   },
   fieldRow: {
